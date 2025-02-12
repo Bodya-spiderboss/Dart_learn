@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "604828782745",
+    "firebase_url": "https://notebook-dee91-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "notebook-dee91",
+    "storage_bucket": "notebook-dee91.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:604828782745:android:2b4ab8e00a1f50a4872808",
+        "android_client_info": {
+          "package_name": "com.me.notebook.my_notebook"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDohnBY4Gj9dsr9UXctRsMLhisvinLzrlE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

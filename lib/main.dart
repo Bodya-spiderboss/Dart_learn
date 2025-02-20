@@ -4,8 +4,6 @@ import 'package:my_notebook/Page/Main_screen.dart';
 import 'package:my_notebook/Page/UserPanel.dart';
 import 'package:my_notebook/Page/NoteEdit.dart';
 
-
-
 void main() => runApp(MaterialApp(
   theme: ThemeData(
     primaryColor: Colors.green,

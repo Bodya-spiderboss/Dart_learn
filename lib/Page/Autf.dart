@@ -1,9 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:my_notebook/data/DataFile.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:my_notebook/services/snack_bar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Autf extends StatefulWidget {
   const Autf({super.key});
@@ -20,15 +22,19 @@ class _AutfState extends State<Autf> {
   TextEditingController passwordRTextInputController = TextEditingController();
   final singupformKey = GlobalKey<FormState>();
   final singinformKey = GlobalKey<FormState>();
-
+  CollectionReference NoteUserCollection = FirebaseFirestore.instance.collection('Users').doc(email).collection('Docs');
 
 
   @override
   void initState() {
     super.initState();
     //initFireBase();
-    Autologin();
-
+    WidgetsFlutterBinding.ensureInitialized();
+    getData();
+    if(autologin = true) {
+      print(autologin);
+      Autologin();
+    }
   }
   @override
   void disponse(){
@@ -38,16 +44,29 @@ class _AutfState extends State<Autf> {
     super.dispose();
   }
 
+
+  Future<void> saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('name', name);
+    await prefs.setString('email', emailTextInputController.text.trim());
+    print('email ${emailTextInputController.text.trim()}');
+    await prefs.setString('password', passwordTextInputController.text.trim());
+    print('password ${passwordTextInputController.text.trim()}');
+    print("Дані збережені!");
+  }
+  Future<void> getData() async {
+    final prefs = await SharedPreferences.getInstance();
+    name = prefs.getString('name')!;
+    email = prefs.getString('email')!;
+    password = prefs.getString('password')!;
+  }
   void togglePasswordView() {
     setState(() {
       isHiddenPassword = !isHiddenPassword;
     });
   }
   Future<void> Autologin() async {
-    final navigator = Navigator.of(context);
-
-    final isValid = singinformKey.currentState!.validate();
-    if (!isValid) return;
+    print('Autologin start');
 
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -57,7 +76,7 @@ class _AutfState extends State<Autf> {
     } on FirebaseAuthException catch (e) {
       print(e.code);
 
-      if (e.code == 'user-not-found' ) {
+      if (e.code == 'invalid-email' ) {
         SnackBarService.showSnackBar(
           context,
           'Неправильний email. Спробуйте знову',
@@ -71,6 +90,14 @@ class _AutfState extends State<Autf> {
           true,
         );
         return;
+      }
+      else if (e.code == 'network-request-failed'){
+        SnackBarService.showSnackBar(
+          context,
+          'Відсутнє підключення. Спробуйте ще раз пізніше',
+          true,
+        );
+        return;
       } else {
         SnackBarService.showSnackBar(
           context,
@@ -80,11 +107,12 @@ class _AutfState extends State<Autf> {
         return;
       }
     }
-
-    navigator.pushNamedAndRemoveUntil('/Main', (Route<dynamic> route) => false);
+    print('Autologin end');
+    Navigator.pushReplacementNamed(context, '/FBDataLoad');
   }
   Future<void> login() async {
     final navigator = Navigator.of(context);
+
 
     final isValid = singinformKey.currentState!.validate();
     if (!isValid) return;
@@ -97,7 +125,7 @@ class _AutfState extends State<Autf> {
     } on FirebaseAuthException catch (e) {
       print(e.code);
 
-      if (e.code == 'user-not-found' ) {
+      if (e.code == 'invalid-email' ) {
         SnackBarService.showSnackBar(
           context,
           'Неправильний email. Спробуйте знову',
@@ -111,7 +139,15 @@ class _AutfState extends State<Autf> {
           true,
         );
         return;
-      } else {
+      }
+      else if (e.code == 'network-request-failed'){
+        SnackBarService.showSnackBar(
+          context,
+          'Відсутнє підключення. Спробуйте ще раз пізніше',
+          true,
+        );
+        return;
+      }else {
         SnackBarService.showSnackBar(
           context,
           'Невідома помилка, спробуйте ще раз пізніше',
@@ -120,10 +156,11 @@ class _AutfState extends State<Autf> {
         return;
       }
     }
-
-    Navigator.pushReplacementNamed(context, '/Main');
+    saveData();
+    Navigator.pushReplacementNamed(context, '/FBDataLoad');
   }
   Future<void> SingUp() async {
+
     final navigator = Navigator.of(context);
 
     final isValid = singupformKey.currentState!.validate();
@@ -165,12 +202,20 @@ class _AutfState extends State<Autf> {
           'Невідома помилка, спробуйте ще раз пізніше',
           true,
         );
+
         return;
       }
     }
 
+
+    NoteUserCollection.doc('standart').set('Тицьни на мене');
+    NoteUserCollection.doc('standart').collection('Data').add(
+        {'item':
+        'Для видвлення свайпай в ліво або в право '
+            '\nДля редагування тицяй на текст '
+            '\nДля збереженя відредагованого тицяй на галочку'});
+    saveData();
     navigator.pushNamedAndRemoveUntil('/', (Route<dynamic> route) => false);
-    //Navigator.pop(context);
   }
 
   @override
@@ -284,10 +329,10 @@ class _AutfState extends State<Autf> {
                       color: Colors.black,
                       fontSize: 20,
                     )  ) ,),
-              ElevatedButton(onPressed: (){Navigator.pushNamed(context, '/ResetPassword');},
+              TextButton(onPressed: (){Navigator.pushNamed(context, '/ResetPassword');},
                 child: Text('Забув пароль :(',
                     style:TextStyle(
-                      color: Colors.black,
+                      color: Colors.green,
                       fontSize: 20,
                     )  ) ,),
               SizedBox( height: MediaQuery.sizeOf(context).height * 0.07 ,),
@@ -353,6 +398,7 @@ class _AutfState extends State<Autf> {
             _email != null && !EmailValidator.validate(_email)
                 ?'Неправильний email'
                 : null,
+            onChanged: (value){email = value;print(email);},
           ),
         ),
           SizedBox(height: MediaQuery.sizeOf(context).height * 0.1, width: MediaQuery.sizeOf(context).width * 0.8 ,
@@ -387,6 +433,7 @@ class _AutfState extends State<Autf> {
                   ?'Мінімум 6 символів'
                   : null,
               autovalidateMode: AutovalidateMode.always,
+              onChanged: (value){password = value;},
 
             ),
           ),

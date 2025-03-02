@@ -43,6 +43,10 @@ dependencies:
   cloud_firestore:
   firebase_auth:
   email_validator:
+  shared_preferences:
+  file_picker:
+  image_picker:
+
 
 
 dev_dependencies:

@@ -1,7 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:my_notebook/data/DataFile.dart';
+import 'package:my_notebook/models/Drawer.dart';
 import 'package:weather/weather.dart';
 import 'package:firebase_core/firebase_core.dart';
 
@@ -16,27 +16,21 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
 final WeatherFactory _wf = WeatherFactory(OPEN_WEATHER_API);
 
-void initFireBase () async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-}
 
 Weather? _weather;
   @override
   void initState() {
     super.initState();
-    _wf.currentWeatherByCityName('Dnipro').then((value) {
+    _wf.currentWeatherByCityName(city).then((value) {
       setState(() {
         _weather = value;
       });
-      initFireBase();
       dataSet();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -77,75 +71,7 @@ Weather? _weather;
         ],
       ),),
 
-      drawer:  NavigationDrawer(
-
-        backgroundColor: Colors.green,
-        children: [
-
-              Container(color: Colors.white,
-                  height: MediaQuery.sizeOf(context).height * 0.86,
-                  width: MediaQuery.sizeOf(context).width * 1 ,
-
-                  child: Column(mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                    CircleAvatar(backgroundImage: AssetImage('packages/image/restran.jpeg'), radius: MediaQuery.sizeOf(context).height * 0.06,),
-                    // margin:EdgeInsets.fromLTRB(5, 5, 15, 5) ,
-                    Padding(padding: EdgeInsets.only(top: 20)),
-                    TextButton(onPressed: (){Navigator.pushNamed(context, '/User');},
-                      child: Text (name,style: TextStyle(fontSize: 25,color: Colors.black,)),
-                    ),
-                    Row(children: [
-                      Padding(padding: EdgeInsets.only(top: 20)),
-                      Icon(Icons.home_filled, size: MediaQuery.sizeOf(context).height * 0.035,),
-                      TextButton (
-                        style: ElevatedButton.styleFrom (
-                            backgroundColor: Colors.white,
-                            overlayColor: Colors.green,
-                            minimumSize: Size(100, 25)
-                        ),
-                        onPressed: (){
-                          Navigator.pushReplacementNamed(context, '/');
-                        }, child: Text('Головне меню', style: TextStyle(color: Colors.black, fontSize: 15),),
-                      ),]),
-
-                    Row(children: [
-                      Padding(padding: EdgeInsets.only(top: 15)),
-                      Icon(Icons.list_alt, size: MediaQuery.sizeOf(context).height * 0.035,),
-                      TextButton(
-                        style: ElevatedButton.styleFrom (
-                            backgroundColor: Colors.white,
-                            overlayColor: Colors.green,
-                            minimumSize: Size(100, 45)
-                        ),
-                        onPressed: (){
-                          Navigator.pushReplacementNamed(context, '/Home');
-                        }, child: Text('Moї плани', style: TextStyle(color: Colors.black, fontSize: 15),),
-                      ),
-                    ],),
-
-                  ],) ),
-          BottomAppBar(
-            color: Colors.white,
-            child:
-            Row( mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.settings, size: MediaQuery.sizeOf(context).height * 0.035,),
-                TextButton(
-                  style: ElevatedButton.styleFrom (
-                      overlayColor: Colors.green,
-                      minimumSize: Size(100, 45)
-                  ),
-                  onPressed: (){
-                    Navigator.pushReplacementNamed(context, '/Settings');
-                  }, child: Text('Налаштування', style: TextStyle(color: Colors.black, fontSize: 15),),
-                ),
-
-              ],),
-          ),
-        ],
-
-      ),
+      drawer: drawer(context),
 
     );
 
@@ -172,7 +98,9 @@ Weather? _weather;
   }
 
   Widget _locationHeder(){
-  return Text(_weather?.areaName ?? "", style: TextStyle(color: Colors.black, fontSize: 20),);
+  return TextButton( child: Text( _weather?.areaName ?? "", style: TextStyle(color: Colors.black, fontSize: 20)),
+  onPressed: SitySelect,
+  );
   }
 
   Widget _DateTimeFormat(){
@@ -302,5 +230,19 @@ void dataSet(){
   DateTime now = _weather!.date!;
     Date = '${DateFormat('d.${now.month}.y').format(now)}';
     Time = DateFormat('hh:mm:ss a').format(now);
+}
+void SitySelect() {
+    showDialog(context: context, builder: (BuildContext context){
+      return AlertDialog(
+        title: TextField(controller: TextEditingController(text: city),
+        onChanged: (value) { city = value;},),
+        actions: [TextButton(onPressed: (){Navigator.canPop(context);}, child: Text("OK",
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 30
+          )),)],
+      );
+
+    });
 }
 }

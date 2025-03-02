@@ -1,4 +1,8 @@
+import 'dart:io';
+
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:my_notebook/data/DataFile.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -16,17 +20,39 @@ class NoteEdit extends StatefulWidget {
 
 class _NoteEditState extends State<NoteEdit> {
 
-//Firebase conecting
-  void initFireBase () async {
-    WidgetsFlutterBinding.ensureInitialized();
-    await Firebase.initializeApp();
+  Future<void> uploadImage() async {
+    final ImagePicker _picker = ImagePicker();
+    XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      // Отримуємо шлях до зображення
+      String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+      Reference storageRef = FirebaseStorage.instance.ref().child('images/$fileName');
+
+      try {
+        // Завантаження зображення у Firebase Storage
+        await storageRef.putFile(File(image.path));
+        String downloadURL = await storageRef.getDownloadURL();
+
+        // Збереження URL у Firestore
+        await ActivDoc.add({
+          'item': downloadURL,
+        });
+        print("Image uploaded and URL saved!");
+      } catch (e) {
+        print("Failed to upload image: $e");
+      }
+    } else {
+      print("No image selected");
+    }
   }
+
   @override
   void initState() {
     super.initState();
-    initFireBase();
+
   }
-  CollectionReference ActivDoc = FirebaseFirestore.instance.collection(email).doc(nID).collection('Data');
+  CollectionReference ActivDoc = FirebaseFirestore.instance.collection('Users').doc(email).collection('Docs').doc(nID).collection('Data');
   String uservalue = "lol";
 
   Widget build(BuildContext context) {
@@ -50,30 +76,48 @@ class _NoteEditState extends State<NoteEdit> {
               return ListView.builder(
               itemCount: snapshot.data!.docs.length ,
                 itemBuilder: (BuildContext context, int index)
-                {
-                  return Dismissible(key: Key(snapshot.data!.docs[index].id),
-                    onDismissed:  (direction) async
-                    {
-                      ActivDoc.doc(snapshot.data!.docs[index].id).delete();
-                    },
-
-                      child: Card(child:
-                      ListTile(trailing: IconButton(onPressed: (){
-                        ActivDoc.doc(snapshot.data!.docs[index].id).update({'item': uservalue});
-                      } , icon: Icon(Icons.add)) ,
-
-                        title:
-                        TextField(minLines: 1, maxLines: 99, controller: TextEditingController(text: snapshot.data!.docs[index].get('item')),
-                        style: TextStyle(
-                        fontSize: 20,
-                        color: Colors.black,
-                        ),
-                        onChanged: (String value) {
-                        uservalue = value;
-                        },),
-                      ),)
-                  );
-                },
+               
+                { String text = snapshot.data!.docs[index].get('item');
+                  if(text.startsWith('https://firebasestorage.googleapis.com')){
+                    return Dismissible(key: Key(snapshot.data!.docs[index].id),
+                        child: Card(
+                            child: Image(image: NetworkImage(snapshot.data!.docs[index].get('item')),
+                          height: MediaQuery.sizeOf(context).height * 0.30,
+                        )),
+                        onDismissed: (direction) async {
+                           ActivDoc.doc(snapshot.data!.docs[index].id).delete();},
+                    );
+                  }
+                  else {
+                    return Dismissible(
+                        key: Key(snapshot.data!.docs[index].id),
+                        onDismissed: (direction) async {
+                          ActivDoc.doc(snapshot.data!.docs[index].id).delete();
+                        },
+                        child: Card(
+                          child: ListTile(
+                            trailing: IconButton(
+                                onPressed: () {
+                                  ActivDoc.doc(snapshot.data!.docs[index].id)
+                                      .update({'item': uservalue});
+                                },
+                                icon: Icon(Icons.add)),
+                            title: TextField(
+                              minLines: 1,
+                              maxLines: 99,
+                              controller: TextEditingController(
+                                  text: snapshot.data!.docs[index].get('item')),
+                              style: TextStyle(
+                                fontSize: 20,
+                                color: Colors.black,
+                              ),
+                              onChanged: (String value) {
+                                uservalue = value;
+                              },
+                            ),
+                          ),
+                        ));}
+              },
               );
            }
         ),
@@ -108,9 +152,7 @@ class _NoteEditState extends State<NoteEdit> {
               },
                   child: Text('Teкст')),
                 IconButton(
-                    onPressed: (){
-
-                    },
+                    onPressed: (){uploadImage();},
                     icon: Icon(Icons.image))
 
             ],
@@ -121,29 +163,5 @@ class _NoteEditState extends State<NoteEdit> {
     );
 
   }
-  // Future<void> updateUser(String userId, Map<String, dynamic> newData) {
-  //   return UserCollection
-  //       .doc(userId)
-  //       .update(newData)
-  //       .then((value) => print("User Updated"))
-  //       .catchError((error) => print("Failed to update user: $error"));
-  // }
-  // Future<bool> checkUserExists(String userId) async {
-  //   DocumentSnapshot snapshot = await UserCollection.doc(userId).get();
-  //   return snapshot.exists; // Повертає true, якщо документ існує
-  // }
-  // Future<void> findUserByName(String name) async {
-  //   QuerySnapshot querySnapshot = await UserCollection.where('name', isEqualTo: name).get();
-  //   if (querySnapshot.docs.isNotEmpty) {
-  //     for (var doc in querySnapshot.docs) {
-  //       print("Знайдено документ: ${doc.id} з даними: ${doc.data()}");
-  //     }
-  //   } else {
-  //     print("Документ не знайдено.");
-  //   }
-  // }
-
-
 
 }
-//

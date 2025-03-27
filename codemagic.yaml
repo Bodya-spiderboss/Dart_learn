@@ -6,6 +6,9 @@ workflows:
       xcode: latest
       cocoapods: default
     scripts:
+      - name: Update iOS minimum deployment target
+        script: |
+         sed -i '' 's/platform :ios, .*/platform :ios, "14.0"/' ios/Podfile
       - name: Install dependencies
         script: |
           flutter pub get
